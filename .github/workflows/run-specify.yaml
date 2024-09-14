@@ -15,7 +15,7 @@ jobs:
       - name: Run action
         uses: ./
         with:
-          version: 0.2.12
+          version: 1.7.0
       - name: Run actionlint
         run: |
           actionlint --version
