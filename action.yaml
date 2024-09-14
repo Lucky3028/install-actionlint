@@ -1,0 +1,49 @@
+name: install actionlint
+description: An action to install actionlint.
+author: Lucky3028
+inputs:
+  version:
+    description: The version of actionlint to install. (ref. 1.1.0) If not provided, use the latest.
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Check version
+      shell: bash
+      id: ver
+      run: |
+        if [ -z "${TOOL_VER}" ]; then
+          TOOL_VER=$(
+            gh release list --repo rhysd/actionlint \
+              --json 'tagName,isPrerelease,publishedAt' \
+              --jq '[.[] | select(.isPrerelease | not)] | sort_by(.publishedAt)[-1].tagName'
+          )
+        fi
+        VER="${TOOL_VER#v}"
+        echo "VER=${VER}" >> "${GITHUB_OUTPUT}"
+        echo "${VER}"
+      env:
+        TOOL_VER: ${{ inputs.version }}
+        GH_TOKEN: ${{ github.token }}
+    - name: Download actionlint
+      shell: bash
+      run: |
+        gh release download "v${TOOL_VER}" \
+          --repo rhysd/actionlint \
+          --pattern 'actionlint_*_linux_amd64.tar.gz' \
+          --output '/tmp/actionlint.tar.gz'
+      env:
+        TOOL_VER: ${{ steps.ver.outputs.VER }}
+        GH_TOKEN: ${{ github.token }}
+    - name: Install actionlint
+      shell: bash
+      working-directory: /tmp
+      run: |
+        mkdir dist
+        tar -xvf actionlint.tar.gz -C ./dist/
+        sudo mv ./dist/actionlint /usr/local/bin
+        rm -rf ./dist actionlint.tar.gz
+branding:
+  color: green
+  icon: plus-square
+
